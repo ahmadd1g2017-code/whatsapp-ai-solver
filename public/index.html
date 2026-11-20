@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Darsel AI Solver - حل أسئلة الواتساب الذكي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(23, 32, 54, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-green: #10b981;
+      --accent-emerald: #059669;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      padding: 12px 0 8px;
+    }
+
+    .badge-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 30%, #a7f3d0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Status Banner */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 12px var(--danger);
+      transition: all 0.3s;
+    }
+
+    .status-dot.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 14px var(--accent-green);
+    }
+
+    .status-dot.waiting {
+      background: var(--warning);
+      box-shadow: 0 0 14px var(--warning);
+    }
+
+    .status-text {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* Input & Buttons */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(11, 15, 25, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      direction: ltr;
+      text-align: right;
+    }
+
+    input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Pairing Code Box */
+    .code-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px dashed rgba(16, 185, 129, 0.4);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 14px;
+      display: none;
+    }
+
+    .code-display {
+      font-family: monospace;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #34d399;
+      margin: 8px 0;
+      user-select: all;
+    }
+
+    .steps-list {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: right;
+      line-height: 1.6;
+      margin-top: 10px;
+      padding-right: 18px;
+    }
+
+    /* Controls Grid */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .control-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .control-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .toggle-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .toggle-btn.on {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .toggle-btn.off {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* Activity Logs */
+    .log-feed {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-left: 4px;
+    }
+
+    .log-feed::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-feed::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .log-item {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      border-right: 3px solid #3b82f6;
+    }
+
+    .log-item.answer {
+      border-right-color: var(--accent-green);
+    }
+
+    .log-item.question {
+      border-right-color: var(--accent-blue);
+    }
+
+    .log-item.error {
+      border-right-color: var(--danger);
+    }
+
+    .log-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .log-content {
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .tag-ans {
+      color: #34d399;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge-top">⚡ مدعوم بـ Google Gemini 3.5 Flash</div>
+      <h1>Darsel AI Auto-Solver</h1>
+      <p class="subtitle">حل أسئلة وتمارين الواتساب (نصوص وصور) تلقائياً 24/7</p>
+    </header>
+
+    <!-- الحالة العامة -->
+    <div class="card">
+      <div class="status-banner">
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <div>
+            <div class="status-text" id="statusText">جاري فحص الاتصال...</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="userPhoneDisplay">غير مقترن</div>
+          </div>
+        </div>
+        <button class="toggle-btn on" id="autoSolveBtn" onclick="toggleAutoSolve()">
+          🟢 الرد التلقائي: شغال
+        </button>
+      </div>
+    </div>
+
+    <!-- ربط الواتساب -->
+    <div class="card" id="pairingCard">
+      <div class="card-title">📲 ربط الواتساب (Pairing Code)</div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        أدخل رقم هاتفك مع رمز الدولة لتحصل على كود الربط المباشر من هاتفك دون الحاجة لكاميرا:
+      </p>
+      
+      <div class="form-group">
+        <label>رقم هاتفك على الواتساب (مثال: 962791234567)</label>
+        <input type="tel" id="myPhoneNumber" placeholder="96279xxxxxxxx">
+      </div>
+
+      <button class="btn btn-primary" id="requestPairBtn" onclick="requestPairingCode()">
+        الحصول على كود الاقتران ⚡
+      </button>
+
+      <div class="code-box" id="codeBox">
+        <div style="font-size: 13px; color: var(--text-muted);">كود الربط المباشر:</div>
+        <div class="code-display" id="codeDisplay">----</div>
+        <button class="btn btn-secondary" style="padding: 8px; font-size: 13px;" onclick="copyCode()">
+          نسخ الكود 📋
+        </button>
+        <ol class="steps-list">
+          <li>افتح تطبيق واتساب على هاتفك.</li>
+          <li>اذهب إلى <b>الإعدادات</b> > <b>الأجهزة المرتبطة</b>.</li>
+          <li>اختر <b>ربط جهاز</b> ثم اضغط بالأسفل على <b>الربط باستخدام رقم الهاتف</b>.</li>
+          <li>اكتب الكود الظاهر أعلاه وسيتم الاتصال فوراً!</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- تفاصيل الرقم المستهدف -->
+    <div class="card">
+      <div class="card-title">🎯 إعدادات الرقم المستهدف (Darsel)</div>
+      <div class="controls-grid">
+        <div class="control-item">
+          <div class="control-label">الرقم المستهدف:</div>
+          <div class="control-val" id="targetDisplay">+1 (202) 773-7838</div>
+          <div style="font-size: 11px; color: #34d399;">(Darsel Educational Bot)</div>
+        </div>
+        <div class="control-item">
+          <div class="control-label">حماية الخصوصية:</div>
+          <div class="control-val" style="color: #60a5fa;">فصل تام ومحمي</div>
+          <div style="font-size: 11px; color: var(--text-muted);">يتجاهل كل المحادثات الأخرى</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- سجل الأسئلة والأجوبة المباشر -->
+    <div class="card">
+      <div class="card-title" style="justify-content: space-between;">
+        <span>📝 سجل العمليات والحلول المباشرة</span>
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;" id="logCount">0 عمليات</span>
+      </div>
+      <div class="log-feed" id="logFeed">
+        <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">
+          بانتظار استقبال الأسئلة من Darsel...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentPairingCode = '';
+
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        const userPhone = document.getElementById('userPhoneDisplay');
+        const autoBtn = document.getElementById('autoSolveBtn');
+        const pairingCard = document.getElementById('pairingCard');
+
+        if (data.status === 'connected') {
+          dot.className = 'status-dot connected';
+          text.textContent = '🟢 متصل بحساب الواتساب بنجاح';
+          userPhone.textContent = data.userJid ? `الحساب: ${data.userJid.split('@')[0]}` : 'متصل وجاهز';
+          pairingCard.style.display = 'none';
+        } else if (data.status === 'waiting_pairing') {
+          dot.className = 'status-dot waiting';
+          text.textContent = '🟡 بانتظار إدخال كود الاقتران في الواتساب...';
+          pairingCard.style.display = 'block';
+          if (data.pairingCode) {
+            showCodeBox(data.pairingCode);
+          }
+        } else {
+          dot.className = 'status-dot';
+          text.textContent = '🔴 غير متصل بالواتساب';
+          userPhone.textContent = 'اضغط بالأسفل لطلب كود الربط';
+          pairingCard.style.display = 'block';
+        }
+
+        // Toggle Auto
+        if (data.autoSolveEnabled) {
+          autoBtn.className = 'toggle-btn on';
+          autoBtn.textContent = '🟢 الرد التلقائي: شغال';
+        } else {
+          autoBtn.className = 'toggle-btn off';
+          autoBtn.textContent = '🔴 الرد التلقائي: متوقف';
+        }
+
+        // Target display
+        if (data.targetPhone) {
+          document.getElementById('targetDisplay').textContent = '+' + data.targetPhone;
+        }
+
+        // Render logs
+        renderLogs(data.recentLogs || []);
+      } catch (err) {
+        console.error('Error fetching status:', err);
+      }
+    }
+
+    function renderLogs(logs) {
+      const feed = document.getElementById('logFeed');
+      const count = document.getElementById('logCount');
+      count.textContent = `${logs.length} عمليات`;
+
+      if (logs.length === 0) {
+        feed.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">بانتظار استقبال الأسئلة من Darsel...</div>';
+        return;
+      }
+
+      feed.innerHTML = logs.map(log => {
+        if (log.type === 'answer') {
+          return `
+            <div class="log-item answer">
+              <div class="log-time">${log.time} ⚡ تم الرد على Darsel (${log.durationMs}ms)</div>
+              <div class="log-content"><b>السؤال:</b> ${escapeHtml(log.question)}</div>
+              <div class="log-content"><b>الحل المرسل:</b> <span class="tag-ans">${escapeHtml(log.answer)}</span></div>
+            </div>
+          `;
+        } else if (log.type === 'question') {
+          return `
+            <div class="log-item question">
+              <div class="log-time">${log.time} 📥 استلام سؤال جديد من Darsel</div>
+              <div class="log-content">${escapeHtml(log.text)}</div>
+            </div>
+          `;
+        } else if (log.type === 'system') {
+          return `
+            <div class="log-item">
+              <div class="log-time">${log.time} ℹ️ نظام</div>
+              <div class="log-content">${escapeHtml(log.message)}</div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="log-item error">
+              <div class="log-time">${log.time} ⚠️ تنبيه</div>
+              <div class="log-content">${escapeHtml(log.error || '')}</div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function showCodeBox(code) {
+      currentPairingCode = code;
+      const box = document.getElementById('codeBox');
+      const display = document.getElementById('codeDisplay');
+      box.style.display = 'block';
+      display.textContent = code;
+    }
+
+    async function requestPairingCode() {
+      const input = document.getElementById('myPhoneNumber');
+      const btn = document.getElementById('requestPairBtn');
+      const phone = input.value.trim();
+
+      if (!phone) {
+        alert('يرجى إدخال رقم هاتفك مع رمز الدولة أولاً');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'جاري طلب الكود من خوادم واتساب... ⏳';
+
+      try {
+        const res = await fetch('/api/pair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: phone })
+        });
+        const data = await res.json();
+
+        if (data.success && data.code) {
+          showCodeBox(data.code);
+        } else {
+          alert(data.error || 'فشل طلب كود الاقتران');
+        }
+      } catch (err) {
+        alert('حدث خطأ في الاتصال: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'الحصول على كود الاقتران ⚡';
+        updateStatus();
+      }
+    }
+
+    async function toggleAutoSolve() {
+      try {
+        const res = await fetch('/api/toggle-auto', { method: 'POST' });
+        const data = await res.json();
+        updateStatus();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function copyCode() {
+      if (!currentPairingCode) return;
+      navigator.clipboard.writeText(currentPairingCode.replace('-', ''));
+      alert('تم نسخ الكود بنجاح! الصقه الآن في واتساب.');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[m]);
+    }
+
+    // Refresh every 3 seconds
+    setInterval(updateStatus, 3000);
+    updateStatus();
+  </script>
+</body>
+</html>

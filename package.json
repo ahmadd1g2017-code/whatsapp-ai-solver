@@ -1,0 +1,30 @@
+{
+  "name": "whatsapp-ai-solver",
+  "version": "1.0.0",
+  "description": "WhatsApp AI Solver for Darsel questions with Gemini 2.0 Flash, Baileys &amp; mobile web dashboard",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmadd1g2017-code/whatsapp-ai-solver.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ahmadd1g2017-code/whatsapp-ai-solver/issues"
+  },
+  "homepage": "https://github.com/ahmadd1g2017-code/whatsapp-ai-solver#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4"
+  }
+}
