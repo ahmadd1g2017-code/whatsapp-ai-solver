@@ -1,18 +1,13 @@
 FROM node:22-slim
-
 WORKDIR /app
-
-# Install app dependencies
 COPY package*.json ./
-RUN npm install --omit=dev
-
-# Bundle app source
+RUN npm ci --omit=dev
 COPY . .
-
-# Expose web port (Northflank default or custom)
-EXPOSE 3000
-
+RUN mkdir -p /data && chown node:node /data
+USER node
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
 ENV PORT=3000
-
+ENV DATA_DIR=/data
+EXPOSE 3000
 CMD ["node", "index.js"]

@@ -5,7 +5,23 @@ const config = require('./config');
 const whatsappBot = require('./whatsapp-bot');
 
 const app = express();
-app.use(cors());
+// Same-origin dashboard; no cross-origin API access.
+const crypto = require('node:crypto');
+if (config.ADMIN_PASSWORD.length < 20) throw new Error('Set ADMIN_PASSWORD to at least 20 characters');
+app.use((req, res, next) => {
+  if (req.path === '/health') return next();
+  res.set('Cache-Control', 'no-store');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  if (req.headers.origin && req.headers.origin !== `${req.protocol}://${req.get('host')}`) return res.sendStatus(403);
+  const supplied = req.headers.authorization || '';
+  const expected = 'Basic ' + Buffer.from('admin:' + config.ADMIN_PASSWORD).toString('base64');
+  const hash = x => crypto.createHash('sha256').update(x).digest();
+  if (!crypto.timingSafeEqual(hash(supplied), hash(expected))) {
+    res.set('WWW-Authenticate', 'Basic realm="WhatsApp Solver"'); return res.sendStatus(401);
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -44,14 +60,7 @@ app.post('/api/toggle-auto', (req, res) => {
   res.json({ success: true, autoSolveEnabled: state });
 });
 
-// Update target phone
-app.post('/api/set-target', (req, res) => {
-  const { targetPhone } = req.body;
-  if (targetPhone) {
-    whatsappBot.setTargetPhone(targetPhone);
-  }
-  res.json({ success: true, targetPhone: whatsappBot.targetPhone });
-});
+// Target is fixed to Darsel; no remote target mutation.
 
 // Fallback to index.html
 app.use((req, res) => {
@@ -59,11 +68,11 @@ app.use((req, res) => {
 });
 
 // Start Express server and WhatsApp bot
-app.listen(config.PORT, () => {
+app.listen(config.PORT, config.HOST, () => {
   console.log(`===============================================`);
   console.log(`🚀 Darsel AI Solver Server running on port ${config.PORT}`);
   console.log(`📱 Target phone: ${config.TARGET_PHONE} (Darsel)`);
-  console.log(`⚡ Powered by Google Gemini 3.5 Flash`);
+  console.log(`⚡ Powered by Google Gemini`);
   console.log(`===============================================`);
 
   // Start WhatsApp listener in the background

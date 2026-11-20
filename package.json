@@ -4,7 +4,8 @@
   "description": "WhatsApp AI Solver for Darsel questions with Gemini 2.0 Flash, Baileys &amp; mobile web dashboard",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "node --test tests/*.test.js"
   },
   "repository": {
     "type": "git",
