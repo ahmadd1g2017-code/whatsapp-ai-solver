@@ -11,10 +11,12 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const aiSolver = require('./ai-solver');
+const { isTarget, MessageGate } = require('./safety');
 
 class WhatsAppBot {
   constructor() {
     this.sock = null;
+    this.gate = new MessageGate(config.STATE_FILE);
     this.status = 'disconnected'; // 'disconnected' | 'waiting_pairing' | 'connected'
     this.qrCode = null;
     this.pairingCode = null;
@@ -26,10 +28,7 @@ class WhatsAppBot {
   }
 
   isTargetSender(remoteJid) {
-    if (!remoteJid) return false;
-    const cleanJid = remoteJid.replace(/[^0-9]/g, '');
-    const cleanTarget = this.targetPhone.replace(/[^0-9]/g, '');
-    return cleanJid.includes(cleanTarget) || cleanTarget.includes(cleanJid);
+    return isTarget(remoteJid, this.targetPhone);
   }
 
   logActivity(entry) {
@@ -115,7 +114,11 @@ class WhatsAppBot {
           }
 
           console.log(`[WhatsApp] Received message from target Darsel (${remoteJid})`);
-          await this.handleDarselMessage(msg);
+          if (!this.autoSolveEnabled) continue;
+          await this.gate.enqueue(async () => {
+            if (!this.autoSolveEnabled || !this.gate.claim(msg.key.id)) return;
+            await this.handleDarselMessage(msg);
+          }).catch(err => this.logActivity({ type: 'error', error: err.message }));
         }
       });
 
@@ -148,7 +151,7 @@ class WhatsAppBot {
       const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
       this.pairingCode = formatted;
       this.status = 'waiting_pairing';
-      console.log(`[WhatsApp] Generated Pairing Code for ${cleanNumber}: ${formatted}`);
+      console.log('[WhatsApp] Pairing code generated');
       return formatted;
     } catch (err) {
       console.error('[WhatsApp] Failed to request pairing code:', err);
@@ -158,7 +161,7 @@ class WhatsAppBot {
 
   async handleDarselMessage(msg) {
     const remoteJid = msg.key.remoteJid;
-    const messageContent = msg.message;
+    const messageContent = msg.message?.ephemeralMessage?.message || msg.message?.viewOnceMessageV2?.message || msg.message;
 
     // Extract text from regular conversation, extended text, or image caption
     let text = messageContent.conversation ||
@@ -171,6 +174,9 @@ class WhatsAppBot {
     // Support both direct image and viewOnce image
     const rawImage = messageContent.imageMessage || messageContent.viewOnceMessageV2?.message?.imageMessage;
     if (rawImage) {
+      if (Number(rawImage.fileLength || 0) > config.MAX_IMAGE_BYTES) {
+        this.logActivity({ type: 'error', error: 'Image exceeds size limit; skipped' }); return;
+      }
       try {
         imageBuffer = await downloadMediaMessage(
           msg,
@@ -179,10 +185,14 @@ class WhatsAppBot {
           { logger: pino({ level: 'silent' }) }
         );
         imageMime = rawImage.mimetype || 'image/jpeg';
+        if (imageBuffer.length > config.MAX_IMAGE_BYTES || !['image/jpeg','image/png','image/webp'].includes(imageMime)) throw new Error('Unsupported or oversized image');
       } catch (err) {
-        console.error('[WhatsApp] Error downloading image:', err);
+        this.logActivity({ type: 'error', error: 'Image download failed; question skipped' });
+        return;
       }
     }
+
+    if (!text.trim() && !imageBuffer) return;
 
     // Record incoming activity
     this.logActivity({
@@ -208,9 +218,15 @@ class WhatsAppBot {
         imageMime
       });
 
+      if (solveResult.skipped) {
+        this.logActivity({ type: 'system', message: 'Question incomplete or no valid answer; skipped' }); return;
+      }
+
       // Human-like natural delay
       const randomDelay = Math.floor(Math.random() * (config.MAX_DELAY_MS - config.MIN_DELAY_MS + 1)) + config.MIN_DELAY_MS;
       await new Promise((resolve) => setTimeout(resolve, randomDelay));
+
+      if (!this.autoSolveEnabled || this.status !== 'connected') return;
 
       // Send the solution back to Darsel
       await this.sock.sendMessage(

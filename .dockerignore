@@ -3,3 +3,5 @@ auth_info
 .git
 .env
 *.log
+data
+.env.*

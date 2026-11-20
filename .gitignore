@@ -3,3 +3,6 @@ auth_info/
 .env
 *.log
 .DS_Store
+data/
+.env.*
+!.env.example
